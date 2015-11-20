@@ -1,0 +1,13 @@
+## zsh related files
+/.zcompdump*
+/.zhistory
+/.zsh_history
+/.zcompcache
+
+## cloned repos
+
+/bgnotify
+/highlighting
+/zsh-autosuggestions
+/oh-my-zsh
+/.zprezto
