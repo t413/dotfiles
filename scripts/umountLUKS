@@ -1,0 +1,22 @@
+#!/bin/bash
+
+[ -t 0 ] && hash tput 2>/dev/null && COLOR_SHELL=true || COLOR_SHELL=false
+function endcolor() { [ "$COLOR_SHELL" = true ] && echo "$(tput sgr 0)" || echo "$@"; }
+function echo_gr()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 0)$(tput setab 2) $@ $(endcolor)" || echo "$@"; }
+function echo_bl()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 4) $@ $(endcolor)" || echo "$@"; }
+function echo_rd()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 1) $@ $(endcolor)" || echo "$@"; }
+
+function fail() { echo_rd "$@"; exit 2; }
+
+MPOINT="$(realpath "$1")" || fail "invalid file $1";
+
+MFROM=$(mount -l | grep "on $MPOINT ") || fail "invalid mountpoint $1";
+MFROM=$(echo "$MFROM" | awk '{print $1}')  || fail "invalid mountpoint $1";
+
+[[ "/dev/mapper" != "$(dirname "$MFROM")" ]] && fail "$MFROM is not in /dev/mapper"
+
+echo_bl "unmounting $MPOINT"
+umount "$MPOINT" || fail "unmounting failed"
+
+echo_bl "closing $(basename "$MFROM")"
+cryptsetup luksClose "$(basename "$MFROM")" || fail "closing failed"

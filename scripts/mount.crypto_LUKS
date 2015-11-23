@@ -1,0 +1,24 @@
+#!/bin/bash
+
+[ -t 0 ] && hash tput 2>/dev/null && COLOR_SHELL=true || COLOR_SHELL=false
+function endcolor() { [ "$COLOR_SHELL" = true ] && echo "$(tput sgr 0)" || echo "$@"; }
+function echo_gr()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 0)$(tput setab 2) $@ $(endcolor)" || echo "$@"; }
+function echo_bl()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 4) $@ $(endcolor)" || echo "$@"; }
+function echo_rd()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 1) $@ $(endcolor)" || echo "$@"; }
+
+IMGFILE="$(losetup "$1" --list -O BACK-FILE | tail -n 1)"
+IMGNAME="$(basename $IMGFILE)"
+IMGNAME="${IMGNAME//./_}"
+
+set -e
+if [[ $(mount | grep ${2%%/} | wc -l) -gt 0 ]]; then
+  echo_rd "Path $2 is already mounted!" >&2
+  exit 9
+else
+  echo_bl "opening $IMGFILE to /dev/mapper/$IMGNAME"
+  cryptsetup luksOpen "$1" "$IMGNAME"
+  shift
+  echo_bl "mounting /dev/mapper/$IMGNAME to $1"
+  mount "/dev/mapper/$IMGNAME" $* || cryptsetup luksClose "$IMGNAME"
+  echo_gr "DONE. To unmount use: sudo umountLUKS $1"
+fi
