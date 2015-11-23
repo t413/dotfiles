@@ -8,7 +8,7 @@ function echo_rd()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput s
 
 function fail() { echo_rd "$@"; exit 2; }
 
-MPOINT="$(realpath "$1")" || fail "invalid file $1";
+MPOINT="$(readlink -f -- "$1")" || fail "invalid file $1";
 
 MFROM=$(mount -l | grep "on $MPOINT ") || fail "invalid mountpoint $1";
 MFROM=$(echo "$MFROM" | awk '{print $1}')  || fail "invalid mountpoint $1";

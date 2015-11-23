@@ -6,7 +6,7 @@ function echo_gr()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 0)$(tput s
 function echo_bl()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 4) $@ $(endcolor)" || echo "$@"; }
 function echo_rd()  { [ "$COLOR_SHELL" = true ] && echo "$(tput setaf 7)$(tput setab 1) $@ $(endcolor)" || echo "$@"; }
 
-IMGFILE="$(losetup "$1" --list -O BACK-FILE | tail -n 1)"
+IMGFILE="$(losetup -a | grep "${1}:" | perl -l -ne '/\(([^\)]+)\)/ && print $1')"
 IMGNAME="$(basename $IMGFILE)"
 IMGNAME="${IMGNAME//./_}"
 
