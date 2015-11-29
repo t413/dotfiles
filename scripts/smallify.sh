@@ -23,7 +23,7 @@ function smallify() {
   ROT=$(exiftool "$video" -Rotation -s3) || { echo_rd error; return 1; }
   if   [[ $ROT =  90 ]]; then vopts=" -w720 -l1280 --rotate=4 "; echo_ma "vertical video 90";
   elif [[ $ROT = 270 ]]; then vopts=" -w720 -l1280 --rotate=7 "; echo_ma "vertical video 270";
-  else; vopts=" -w1280 -l720 "
+  else vopts=" -w1280 -l720 ";
   fi
   echo_bl "encoding $video to $outf (rot=$ROT)"
   HandBrakeCLI -i "$video" -o "$outf" --preset="Normal" --optimize -q22 $vopts || { echo_rd error; return 1; }
