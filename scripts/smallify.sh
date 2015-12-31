@@ -38,6 +38,7 @@ function smallify() {
     echo_bl "encoding $infile to $outf as a jpeg"
     outf="${infile%.*}.jpg"
     sips -s format jpeg -Z 2048 "$infile" --out "$outf"
+    sameSameFileData "$infile" "$outf"
   elif [[ "$MIMEType" == video/* ]]; then
     outf="${infile%.*}.m4v"
     if [[ "$ImageHeight" -gt 720 ]]; then
@@ -52,13 +53,13 @@ function smallify() {
     [[ $Rotation = 180 ]] && { vopts="$vopts --rotate=3 "; echo_ma "upside-down video";  }
     echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> $vopts)"
     HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q22 $vopts || { echo_rd "error encoding"; return 1; }
+    sameSameFileData "$infile" "$outf"  || { echo_rd "error copying metadata"; return 1; }
   else
     echo_rd "unknown type $MIMEType"
   fi
 
-
-  # [ ! -e "originals" ] && mkdir "originals"
-  # mv "$infile" "originals/$infile" || return 2;
+  [ ! -e "originals" ] && mkdir "originals"
+  mv "$infile" "originals/$infile" || return 2;
 
   # echo_or "copying over exif information"
   # sameSameFileData "$infile" "$outf" || { echo_rd "error copying metadata"; return 1; }
