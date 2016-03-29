@@ -41,11 +41,11 @@ function smallify() {
     sameSameFileData "$infile" "$outf"
   elif [[ "$MIMEType" == video/* ]]; then
     outf="${infile%.*}.m4v"
-    if [[ "$ImageHeight" -gt 720 ]]; then
-      echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
-      ImageWidth=$(( $ImageWidth * 720 / $ImageHeight )); ImageHeight=720;
-      echo_or "constraining height to 720 (by $ImageWidth)"
-    fi
+    # if [[ "$ImageHeight" -gt 720 ]]; then
+    #   echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
+    #   ImageWidth=$(( $ImageWidth * 720 / $ImageHeight )); ImageHeight=720;
+    #   echo_or "constraining height to 720 (by $ImageWidth)"
+    # fi
     ## set width/height (and support vertical)
     (( $Rotation % 180 == 0 )) && vopts=" -w$ImageWidth -l$ImageHeight " || vopts=" -w$ImageHeight -l$ImageWidth ";
     [[ $Rotation =  90 ]] && { vopts="$vopts --rotate=4 "; echo_ma "vertical video 90";  }
