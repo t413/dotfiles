@@ -53,14 +53,14 @@ function smallify() {
     [[ $Rotation = 270 ]] && { vopts="$vopts --rotate=7 "; echo_ma "vertical video 270"; }
     [[ $Rotation = 180 ]] && { vopts="$vopts --rotate=3 "; echo_ma "upside-down video";  }
     echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> $vopts)"
-    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q22 $vopts || { echo_rd "error encoding"; return 1; }
+    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q22 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
     sameSameFileData "$infile" "$outf"  || { echo_rd "error copying metadata"; return 1; }
   else
     echo_rd "unknown type $MIMEType"
   fi
 
   [ ! -e "originals" ] && mkdir "originals"
-  mv "$infile" "originals/$infile" || return 2;
+  mv "$infile" "originals/$(basename "$infile")" || return 2;
 
   # echo_or "copying over exif information"
   # sameSameFileData "$infile" "$outf" || { echo_rd "error copying metadata"; return 1; }
@@ -68,9 +68,11 @@ function smallify() {
 }
 
 function smallifyAll() {
-  mkdir -p "originals";
   for infile in "${@}"; do
+    startt=$EPOCHSECONDS
     smallify "$infile" || return 1;
+    elapsed=$(( EPOCHSECONDS - startt ))
+    type bgnotify_formatted 2> /dev/null | grep -q 'function' && bgnotify_formatted 0 "smallify \"$infile\"" "$elapsed"
   done
 }
 
