@@ -27,7 +27,7 @@ function sameSameFileData() {
 #  - uses exiftool to copy back the location and time data
 function smallify() {
   [[ $# != 1 ]] && { echo_rd "usage: $0 [in]"; return 1; }
-  local infile="${1}" fileData;
+  local infile="${1}" fileData vopts;
   fileData="$(exiftool "$infile" -s2 -MIMEType -ImageWidth -ImageHeight -Rotation)" || { echo_rd "error reading file"; return 1; }
   fileData="${fileData//: /=}" #replace ': ' into = assignmant
   eval "${fileData// /_}" #strip spaces, put MIMEType, etc into the local scope
@@ -35,6 +35,7 @@ function smallify() {
   echo_or "$infile -> type: ${MIMEType}, w: ${ImageWidth}, h: ${ImageHeight}, rot: ${Rotation}"
 
   if [[ "$MIMEType" == image/* ]]; then
+    local outf;
     echo_bl "encoding $infile to $outf as a jpeg"
     outf="${infile%.*}.jpg"
     sips -s format jpeg -Z 2048 "$infile" --out "$outf"
