@@ -19,6 +19,9 @@ else
     plugins=(git bgnotify)
     source "$ZSH/oh-my-zsh.sh"
     source "$THISZDIR/custom-ohmyzsh-sorin.zsh" # ZSH_THEME="sorin"
+    bindkey -e
+    bindkey '[C' forward-word  #option + right-arrow, jumps word
+    bindkey '[D' backward-word #optn+left
   else
     echo "not setup, run dotfileSetup to clone stuff"
   fi
