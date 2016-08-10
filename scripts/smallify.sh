@@ -30,6 +30,7 @@ function smallify() {
   local infile="${1}" fileData vopts;
   fileData="$(exiftool "$infile" -s2 -MIMEType -ImageWidth -ImageHeight -Rotation)" || { echo_rd "error reading file"; return 1; }
   fileData="${fileData//: /=}" #replace ': ' into = assignmant
+  local ImageHeight ImageWidth Rotation MIMEType
   eval "${fileData// /_}" #strip spaces, put MIMEType, etc into the local scope
 
   echo_or "$infile -> type: ${MIMEType}, w: ${ImageWidth}, h: ${ImageHeight}, rot: ${Rotation}"
@@ -72,7 +73,7 @@ function smallifyAll() {
     startt=$EPOCHSECONDS
     smallify "$infile" || return 1;
     elapsed=$(( EPOCHSECONDS - startt ))
-    type bgnotify_formatted 2> /dev/null | grep -q 'function' && bgnotify_formatted 0 "smallify \"$infile\"" "$elapsed"
+    type bgnotify_formatted 2> /dev/null | grep -q 'function' && bgnotify_formatted 0 "smallify \"$infile\"" "$elapsed" || tput bel;
   done
 }
 
