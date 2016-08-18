@@ -11,7 +11,7 @@ if [ -e "$PREZTO" ]; then
     git ssh tmux 'history-substring-search'
   zstyle ':prezto:module:prompt' theme sorin
   source "$PREZTO/init.zsh"
-  
+
   [[ "$OSTYPE" == "darwin"* ]] && pmodload osx
 else
   export ZSH="$THISZDIR/oh-my-zsh"
@@ -67,6 +67,33 @@ function dotfileSetup() {
   [[ ! -e "$HOME/.screenrc"  ]] && { echo_gr "linking screenrc";  ln -s "$THISZDIR/screenrc" "$HOME/.screenrc" }
   [[ ! -e "$HOME/.tmux.conf" ]] && { echo_gr "linking tmux.conf"; ln -s "$THISZDIR/tmux.conf" "$HOME/.tmux.conf" }
 }
+
+function perror() { echo_rd "$@" >&2; }
+
+function gettime() {
+  [[ "$OSTYPE" == "darwin"* ]] && echo $(( $(gdate +%s%N)/1000000000.0 )) || echo $(( $(date +%s%N)/1000000000.0 ));
+}
+
+function lower() { echo "$@" | tr '[:upper:]' '[:lower:]'; }
+function upper() { echo "$@" | tr '[:lower:]' '[:upper:]'; }
+
+function isHostDown() {
+  local host; for host in $@; do fping -r1 -q -t 100 "$host" >/dev/null && return 1; done; return 0;
+}
+
+function isHostUp() {
+  local host; for host in $@; do fping -r1 -q -t 100 "$host" >/dev/null || return 1; done; return 0;
+}
+
+function waitHostsUp() {
+  local start="$(gettime)"
+  until isHostUp "${@}"; do
+    [[ $(( $start + ${TIMEOUT:-80})) -lt $(gettime) ]] && { perror "timeout"; return 2; }
+    sleep 1; echo -n ".";
+  done; printf "$(clr_gr) done (in %0.3fs) $(endcolor)\n" $(( $(gettime) - $start))
+}
+
+function sin() { echo "s(($@) *3.14159/180)" | bc -l; }
 
 alias make="make -j 6"
 
