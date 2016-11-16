@@ -42,12 +42,18 @@ function smallify() {
     sips -s format jpeg -Z 2048 "$infile" --out "$outf"
     sameSameFileData "$infile" "$outf"
   elif [[ "$MIMEType" == video/* ]]; then
-    outf="${infile%.*}.m4v"
+    outf="$(basename "${infile%.*}.m4v")"
+    [ "$outf" -ef "$infile" ] && { echo_rd "infile name == outfile"; return 2; }
     # if [[ "$ImageHeight" -gt 720 ]]; then
     #   echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
     #   ImageWidth=$(( $ImageWidth * 720 / $ImageHeight )); ImageHeight=720;
     #   echo_or "constraining height to 720 (by $ImageWidth)"
     # fi
+    if [[ "$ImageHeight" -gt 1080 ]]; then
+      echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
+      ImageWidth=$(( $ImageWidth * 1080 / $ImageHeight )); ImageHeight=1080;
+      echo_or "constraining height to 1080 (by $ImageWidth)"
+    fi
     ## set width/height (and support vertical)
     (( $Rotation % 180 == 0 )) && vopts=" -w$ImageWidth -l$ImageHeight " || vopts=" -w$ImageHeight -l$ImageWidth ";
     [[ $Rotation =  90 ]] && { vopts="$vopts --rotate=4 "; echo_ma "vertical video 90";  }
@@ -55,6 +61,7 @@ function smallify() {
     [[ $Rotation = 180 ]] && { vopts="$vopts --rotate=3 "; echo_ma "upside-down video";  }
     echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> $vopts)"
     HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q22 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
+    # --subtitle scan,1,2,3,4,5,6,7,8,9,10 -a 1,2,3,4,5,6,7,8,9,10
     sameSameFileData "$infile" "$outf"  || { echo_rd "error copying metadata"; return 1; }
   else
     echo_rd "unknown type $MIMEType"
@@ -69,6 +76,7 @@ function smallify() {
 }
 
 function smallifyAll() {
+  local infile startt elapsed;
   for infile in "${@}"; do
     startt=$EPOCHSECONDS
     smallify "$infile" || return 1;
