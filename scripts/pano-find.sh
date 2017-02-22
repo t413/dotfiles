@@ -25,8 +25,6 @@ function absDiff() {
   printf "%0.3f" "${diff//-/}";
 }
 
-# function f() { printf "%0.3f" "${@}"; }
-
 function checkFile() {
   eval "${vars}" ## put our read-in exif variables into local scope
   echo -n "$(basename "${file}") "
@@ -52,7 +50,11 @@ function checkFile() {
     echo_or "pano doens't change yaw enough: $(absDiff ${CameraYaw} ${lastYaw})º"
   else
     echo_gr "success! $(basename "$f") $(endcolor) $(absDiff ${CameraYaw} ${lastYaw})∆º"
-    # hash tag 2>/dev/null && tag -a grey "$f"; ##color tag the file
+    [[ ! -z "$TAG_DETECTED" ]] && tag -a "$TAG_DETECTED" "$file"; ##color tag the file
+    [[ -d "$COPY_DETECTED" ]] && {
+      local dirname=$(dirname "${file}");
+      cp "$file" "$COPY_DETECTED/${dirname//[^a-zA-Z0-9]/_}-$(basename "${file}")";
+    }
   fi
   lastLat="${GPSLatitude}"
   lastLon="${GPSLongitude}"
@@ -64,11 +66,15 @@ function checkFile() {
 }
 
 function findPano() {
-  [ -d "$1" ] || { eerror "findPano needs directory"; return 1; }
-  local f
+  [[ ! -d "$1" ]] && { eerror "findPano needs directory"; return 1; }
   echo_bl "-- $1 --"
-  
-  exiftool -ext jpg "$1" -s2 -fast -n -GPSLatitude -GPSLongitude -CameraYaw -CameraPitch -ImageWidth -ImageHeight -AbsoluteAltitude -SpeedX -SpeedY -SpeedZ | {
+
+  exiftool -ext jpg "$1" -s2 -fast -n\
+    -GPSLatitude -GPSLongitude\
+    -CameraYaw -CameraPitch\
+    -ImageWidth -ImageHeight\
+    -AbsoluteAltitude\
+    -SpeedX -SpeedY -SpeedZ | {
     local file lastFile vars lastLat lastLon lastYaw lastPitch lastAlt
     while read -r line; do
       if [[ "$line" == '======== '* ]]; then
@@ -80,10 +86,9 @@ function findPano() {
         vars="${vars}local ${line%': '*}=\"${line#*': '}\";"
       fi
     done
+  } || { eerror "error reading files in $1"; }
 
-  } || { eerror "error reading files in $1"; continue; }
-  return
-  
+  local f
   for f in "$1/"*; do
     [ -d "$f" ] && { findPano "$f"; }
   done
@@ -92,9 +97,25 @@ function findPano() {
 ## only execute this if this script is directly called
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
   hash exiftool 2>/dev/null || { eerror "missing exiftool!"; return 1; }
-  
-  [ ! $# ] && findPano "$(pwd)";
-  for f in "${@}"; do
+  todos=()
+  for i in "$@"; do
+    case $i in
+      --cp=*) #can be -c=*|--cp=*
+        COPY_DETECTED="${i#*=}"
+        shift;;
+      -t=*|--tag=*)
+        TAG_DETECTED="${i#*=}"
+        hash tag 2>/dev/null || { eerror "no 'tag' tool installed (brew install tag first)"; exit 1; }
+        echo_bl "will tag results with $TAG_DETECTED"
+        shift;;
+      *)
+        todos+=("${i}")
+      ;;
+    esac
+  done
+
+  [[ -z "${todos}" ]] && todos+=(".");
+  for f in "${todos[@]}"; do
     findPano "$f"
   done
 fi
