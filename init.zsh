@@ -153,3 +153,14 @@ function highlight() {
     c_rs=$'\e[0m'
     while read -r line; do echo $line | sed s"/$2/$fg_c\0$c_rs/"; done
 }
+
+## [imgfile] [out] [format]
+function convertImage() {
+  sips -s format "${3}" "${1}" --out "${2}" &&
+  exiftool -overwrite_original -P -tagsFromFile "${1}" -Location:all -Time:all -EXIF:all -XMP:all "${2}"
+}
+
+function mkJp2() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.jp2" jp2  || return 1; done; }
+function mkPng() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.png" png  || return 1; done; }
+function mkJpg() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.jpg" jpeg || return 1; done; }
+
