@@ -74,6 +74,19 @@ function gettime() {
   [[ "$OSTYPE" == "darwin"* ]] && echo $(( $(gdate +%s%N)/1000000000.0 )) || echo $(( $(date +%s%N)/1000000000.0 ));
 }
 
+function unixtotime() {
+  [[ -z $* ]] || { echo "${@}" | unixtotime; return; }
+  gawk '{
+    if ($1 ~ /^[0-9.]+$/) {
+      if ($1 < 10000000000) { $1 = $1 * 1000; }
+      printf "%s.%03d_%s ", strftime("%Y-%m-%d_T%H%M%S", $1 / 1000), int($1 % 1000), strftime("%Z", $1/1000);
+      for (i=2; i<NF; i++)
+        printf $i " ";
+      print $NF
+    } else { print; }
+  }';
+}
+
 function lower() { echo "$@" | tr '[:upper:]' '[:lower:]'; }
 function upper() { echo "$@" | tr '[:lower:]' '[:upper:]'; }
 

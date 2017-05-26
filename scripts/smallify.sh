@@ -28,7 +28,7 @@ function sameSameFileData() {
 function smallify() {
   [[ $# != 1 ]] && { echo_rd "usage: $0 [in]"; return 1; }
   local infile="${1}" fileData vopts;
-  fileData="$(exiftool "$infile" -s2 -MIMEType -ImageWidth -ImageHeight -Rotation)" || { echo_rd "error reading file"; return 1; }
+  fileData="$(exiftool "$infile" -api largefilesupport=1 -s2 -MIMEType -ImageWidth -ImageHeight -Rotation)" || { echo_rd "error reading file"; return 1; }
   fileData="${fileData//: /=}" #replace ': ' into = assignmant
   local ImageHeight ImageWidth Rotation MIMEType
   eval "${fileData// /_}" #strip spaces, put MIMEType, etc into the local scope
@@ -49,26 +49,26 @@ function smallify() {
     #   ImageWidth=$(( $ImageWidth * 720 / $ImageHeight )); ImageHeight=720;
     #   echo_or "constraining height to 720 (by $ImageWidth)"
     # fi
-    if [[ "$ImageHeight" -gt 1080 ]]; then
-      echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
-      ImageWidth=$(( $ImageWidth * 1080 / $ImageHeight )); ImageHeight=1080;
-      echo_or "constraining height to 1080 (by $ImageWidth)"
-    fi
+    # if [[ "$ImageHeight" -gt 1080 ]]; then
+    #   echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
+    #   ImageWidth=$(( $ImageWidth * 1080 / $ImageHeight )); ImageHeight=1080;
+    #   echo_or "constraining height to 1080 (by $ImageWidth)"
+    # fi
     ## set width/height (and support vertical)
     (( $Rotation % 180 == 0 )) && vopts=" -w$ImageWidth -l$ImageHeight " || vopts=" -w$ImageHeight -l$ImageWidth ";
     [[ $Rotation =  90 ]] && { vopts="$vopts --rotate=4 "; echo_ma "vertical video 90";  }
     [[ $Rotation = 270 ]] && { vopts="$vopts --rotate=7 "; echo_ma "vertical video 270"; }
     [[ $Rotation = 180 ]] && { vopts="$vopts --rotate=3 "; echo_ma "upside-down video";  }
     echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> $vopts)"
-    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q22 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
     # --subtitle scan,1,2,3,4,5,6,7,8,9,10 -a 1,2,3,4,5,6,7,8,9,10
+    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q26 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
     sameSameFileData "$infile" "$outf"  || { echo_rd "error copying metadata"; return 1; }
   else
     echo_rd "unknown type $MIMEType"
   fi
 
-  [ ! -e "originals" ] && mkdir "originals"
-  mv "$infile" "originals/$(basename "$infile")" || return 2;
+  # [ ! -e "originals" ] && mkdir "originals"
+  # mv "$infile" "originals/$(basename "$infile")" || return 2;
 
   # echo_or "copying over exif information"
   # sameSameFileData "$infile" "$outf" || { echo_rd "error copying metadata"; return 1; }
@@ -79,7 +79,7 @@ function smallifyAll() {
   local infile startt elapsed;
   for infile in "${@}"; do
     startt=$EPOCHSECONDS
-    smallify "$infile" || return 1;
+    smallify "$infile"; #|| return 1;
     elapsed=$(( EPOCHSECONDS - startt ))
     type bgnotify_formatted 2> /dev/null | grep -q 'function' && bgnotify_formatted 0 "smallify \"$infile\"" "$elapsed" || tput bel;
   done
