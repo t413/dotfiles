@@ -177,3 +177,9 @@ function mkJp2() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.jp2
 function mkPng() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.png" png  || return 1; done; }
 function mkJpg() { local f; for f in "${@}"; do convertImage "${f}" "${f%.*}.jpg" jpeg || return 1; done; }
 
+function mkFast() {
+  local f; for f in "${@}"; do
+    ffmpeg -i "${f}" -filter_complex "[0:v]setpts=PTS/16[v];[0:a]atempo=2.0,atempo=2.0,atempo=2.0,atempo=2.0[a]" -map "[v]" -map "[a]" -vb 60M "${f%.*}_16.mov" || return;
+  done
+}
+
