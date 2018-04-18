@@ -60,24 +60,23 @@ function smallify() {
   elif [[ "$MIMEType" == video/* ]]; then
     outf="${2:-$(basename "${infile%.*}.mp4")}"; #
     [ "$outf" -ef "$infile" ] && { echo_rd "infile name == outfile"; return 2; }
-    # if [[ "$ImageHeight" -gt 720 ]]; then
-    #   echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
-    #   ImageWidth=$(( $ImageWidth * 720 / $ImageHeight )); ImageHeight=720;
-    #   echo_or "constraining height to 720 (by $ImageWidth)"
-    # fi
-    # if [[ "$ImageHeight" -gt 1080 ]]; then
-    #   echo_or "constraining height from $ImageWidth x $ImageHeight ($(( $ImageWidth / $ImageHeight)))"
-    #   ImageWidth=$(( $ImageWidth * 1080 / $ImageHeight )); ImageHeight=1080;
-    #   echo_or "constraining height to 1080 (by $ImageWidth)"
-    # fi
+
+    if [[ -z "$MAX_HEIGHT" ]]; then
+      echo "export MAX_HEIGHT=720 to limit size (is $ImageHeight x $ImageWidth)";
+    elif [[ "$ImageHeight" -gt "$MAX_HEIGHT" ]]; then
+      ImageWidth=$(( $ImageWidth * $MAX_HEIGHT / $ImageHeight )); ImageHeight="$MAX_HEIGHT";
+      echo_or "constraining to $ImageWidth x $ImageHeight"
+    fi
+    [[ -z "$QUALITY" ]] && echo "export QUALITY=22 to set quality (20 huge file, 28 tiny file)";
+    vopts=("-q${QUALITY:-26}");
     ## set width/height (and support vertical)
-    (( $Rotation % 180 == 0 )) && vopts=" -w$ImageWidth -l$ImageHeight " || vopts=" -w$ImageHeight -l$ImageWidth ";
-    [[ $Rotation =  90 ]] && { vopts="$vopts --rotate=4 "; echo_ma "vertical video 90";  }
-    [[ $Rotation = 270 ]] && { vopts="$vopts --rotate=7 "; echo_ma "vertical video 270"; }
-    [[ $Rotation = 180 ]] && { vopts="$vopts --rotate=3 "; echo_ma "upside-down video";  }
-    echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> $vopts)"
+    (( $Rotation % 180 == 0 )) && vopts+=("-w$ImageWidth" "-l$ImageHeight") || vopts+=("-w$ImageHeight" "-l$ImageWidth");
+    [[ $Rotation =  90 ]] && { vopts+=("--rotate=4"); echo_ma "vertical video 90";  }
+    [[ $Rotation = 270 ]] && { vopts+=("--rotate=7"); echo_ma "vertical video 270"; }
+    [[ $Rotation = 180 ]] && { vopts+=("--rotate=3"); echo_ma "upside-down video";  }
+    echo_bl "encoding $infile to $outf (rot=$Rotation) (vopts -> ${vopts[@]})"
     # --subtitle scan,1,2,3,4,5,6,7,8,9,10 -a 1,2,3,4,5,6,7,8,9,10
-    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize -q26 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
+    HandBrakeCLI -i "$infile" -o "$outf" --preset="Normal" --optimize "${vopts[@]}" 2> /dev/null || { echo_rd "error encoding"; return 1; }
     # HandBrakeCLI -i "$infile" -o "$outf" -e x265 --optimize -q22 $vopts 2> /dev/null || { echo_rd "error encoding"; return 1; }
     sameSameFileData "$infile" "$outf"  || { echo_rd "error copying metadata"; return 1; }
   else
