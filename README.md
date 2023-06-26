@@ -6,7 +6,7 @@ here's what I run on every new VM I setup:
 ### Deps
 
 ``` bash
-sudo apt install git zsh fping screen byobu aptitude curl wget rsync nano avahi-daemon cryptsetup;
+sudo apt install git zsh fping screen byobu aptitude curl wget rsync nano avahi-daemon cryptsetup htop;
 ```
 
 ### ZSH Shell
